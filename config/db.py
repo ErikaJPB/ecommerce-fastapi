@@ -1,6 +1,18 @@
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from fastapi import Depends
 
-engine = create_engine("mysql+pymysql://root@localhost:3306/ecommerce")
-meta = MetaData()
+DATABASE_URL = "mysql+pymysql://root@localhost:3306/ecommerce"
 
-conn = engine.connect()
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
