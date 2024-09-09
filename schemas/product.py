@@ -4,7 +4,7 @@ from typing import Optional
 class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None
-    price: Optional[condecimal] = Field(None, max_digits=10, decimal_places=2)
+    price: float
     in_stock: bool
 
 
@@ -14,8 +14,11 @@ class ProductCreate(ProductBase):
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    price: Optional[condecimal] = Field(None, max_digits=10, decimal_places=2)
-    in_stock: Optional[bool] = None
+    price:Optional[float]
+    in_stock: Optional[bool]
+
+    class Config:
+        from_attributes = True
 
 
 class ProductInDB(ProductBase):

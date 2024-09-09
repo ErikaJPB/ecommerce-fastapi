@@ -6,13 +6,14 @@ from config.db import get_db
 from models.user import User as UserModel
 from schemas.user import UserCreate, UserOut, UserUpdate
 
-user = APIRouter()
+user = APIRouter(prefix="/users", tags = ["users"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
+# Create user
 @user.post("/users", response_model=UserOut)
 async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     hashed_password = hash_password(user.password)
@@ -31,12 +32,13 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
+# Get users
 @user.get("/users", response_model=list[UserOut])
 async def get_users(db: Session = Depends(get_db)):
     users = db.query(UserModel).all()
     return users
 
-
+# Get user by id
 @user.get("/users/{user_id}", response_model=UserOut)
 async def get_user(user_id: int, db: Session = Depends(get_db)):
     db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
@@ -46,7 +48,7 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
 
     return db_user
 
-
+# Update user
 @user.put("/users/{user_id}", response_model=UserOut)
 async def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
    db_user = db.query(UserModel).filter(UserModel.id == user_id).first() 
@@ -68,6 +70,7 @@ async def update_user(user_id: int, user_update: UserUpdate, db: Session = Depen
 
        return db_user
 
+# Delete user
 @user.delete("/users/{user_id}", response_model=dict)
 async def delete_user(user_id:int, db: Session = Depends(get_db)):
     db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
