@@ -33,7 +33,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 # Get users
-@user.get("/users", response_model=list[UserOut])
+@user.get("/", response_model=list[UserOut])
 async def get_users(db: Session = Depends(get_db)):
     users = db.query(UserModel).all()
     return users

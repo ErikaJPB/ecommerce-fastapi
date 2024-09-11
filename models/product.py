@@ -1,8 +1,9 @@
 from sqlalchemy import Column, Integer, String, Boolean, Numeric 
 from sqlalchemy.ext.declarative import declarative_base
-from config.db import engine
+from config.db import Base
 
-Base = declarative_base()
+
+
 
 class Product(Base):
     __tablename__ = "products"
@@ -14,4 +15,3 @@ class Product(Base):
     in_stock = Column(Boolean, default=True)
 
 
-Base.metadata.create_all(engine)

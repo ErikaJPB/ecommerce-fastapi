@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
-from config.db import engine
-
-Base = declarative_base()
+from models.order import Order
+from config.db import Base
 
 class User(Base):
     __tablename__ = 'users'
@@ -16,4 +16,4 @@ class User(Base):
     hashed_password = Column(String(100), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-Base.metadata.create_all(engine)
+    orders = relationship("Order", back_populates="user")
