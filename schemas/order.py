@@ -9,8 +9,17 @@ class OrderBase(BaseModel):
     created_at: datetime
 
 
-class OrderCreate(OrderBase):
+class OrderItemCreate(BaseModel):
+    product_id: int
+    quantity: int
+
+
+class OrderCreate(BaseModel):
     user_id: int
+    total_price: float
+    status: str = "pending"
+    created_at: datetime
+    items: List[OrderItemCreate]
 
 
 class OrderUpdate(BaseModel):
@@ -26,22 +35,26 @@ class OrderInDB(OrderBase):
         from_attributes = True
 
 
-class OrderOut(OrderBase):
-    id: int
-    user_id: int
-
-    class Config:
-        from_attributes = True
-
-
 class OrderItemBase(BaseModel):
     order_id: int
     product_id: int
     quantity: int
 
 
-class OrderItemCreate(OrderItemBase):
-    pass
+class OrderItemOut(OrderItemBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class OrderOut(OrderBase):
+    id: int
+    user_id: int
+    items: List[OrderItemOut]
+
+    class Config:
+        from_attributes = True
 
 
 class OrderItemUpdate(BaseModel):
@@ -49,13 +62,6 @@ class OrderItemUpdate(BaseModel):
 
 
 class OrderItemInDB(OrderItemBase):
-    id: int
-
-    class Config:
-        from_attributes = True
-
-
-class OrderItemOut(OrderItemBase):
     id: int
 
     class Config:
