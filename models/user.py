@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 from models.order import Order
+from models.cart import Cart
 from config.db import Base
 
 class User(Base):
@@ -17,3 +18,4 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     orders = relationship("Order", back_populates="user")
+    cart = relationship("Cart", back_populates="user", uselist=False)
