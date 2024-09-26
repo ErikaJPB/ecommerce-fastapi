@@ -8,9 +8,10 @@ class CartItemBase(BaseModel):
 
 
 class CartItemCreate(CartItemBase):
-    pass
+    product_id: int
+    quantity: int
 
-class CartItemUpdate(CartItemBase):
+class CartItemUpdate(BaseModel):
     quantity: Optional[int] = None
 
 class CartItemOut(CartItemBase):
