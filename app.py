@@ -3,6 +3,7 @@ from routes.user import user
 from routes.product import product
 from routes.order import order
 from routes.cart import cart
+from routes.token import router as token
 from config.db import Base, engine
 from models.user import User
 from models.order import Order, OrderItem
@@ -15,6 +16,7 @@ app.include_router(user)
 app.include_router(product)
 app.include_router(order)
 app.include_router(cart)
+app.include_router(token)
 
 
 # Create tables only if they do not exist
