@@ -5,6 +5,7 @@ from passlib.context import CryptContext
 from config.db import get_db
 from models.user import User as UserModel
 from schemas.user import UserCreate, UserOut, UserUpdate
+from utils.auth import get_current_user
 
 user = APIRouter(prefix="/users", tags = ["users"])
 
@@ -34,13 +35,13 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 # Get users
 @user.get("/", response_model=list[UserOut])
-async def get_users(db: Session = Depends(get_db)):
+async def get_users(current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
     users = db.query(UserModel).all()
     return users
 
 # Get user by id
-@user.get("/users/{user_id}", response_model=UserOut)
-async def get_user(user_id: int, db: Session = Depends(get_db)):
+@user.get("/{user_id}", response_model=UserOut)
+async def get_user(user_id: int, current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
     db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
 
     if not db_user: 
@@ -49,34 +50,34 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 # Update user
-@user.put("/users/{user_id}", response_model=UserOut)
-async def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
-   db_user = db.query(UserModel).filter(UserModel.id == user_id).first() 
+@user.put("/{user_id}", response_model=UserOut)
+async def update_user(user_id: int, user_update: UserUpdate, current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_user = db.query(UserModel).filter(UserModel.id == user_id).first() 
 
-   if not db_user: 
+    if not db_user: 
         raise HTTPException(status_code=404, detail="User not found")
-   
-   if user_update.first_name is not None: 
-       db_user.first_name = user_update.first_name
+    
+    if user_update.first_name is not None: 
+        db_user.first_name = user_update.first_name
 
-   if user_update.last_name is not None:
-       db_user.last_name = user_update.last_name
+    if user_update.last_name is not None:
+        db_user.last_name = user_update.last_name
 
-   if user_update.password is not None:
-       db_user.hashed_password = hash_password(user_update.password) 
+    if user_update.password is not None:
+        db_user.hashed_password = hash_password(user_update.password) 
 
-       db.commit()
-       db.refresh(db_user)
+    db.commit()  
+    db.refresh(db_user)
 
-       return db_user
+    return db_user
 
 # Delete user
-@user.delete("/users/{user_id}", response_model=dict)
-async def delete_user(user_id:int, db: Session = Depends(get_db)):
+@user.delete("/{user_id}", response_model=dict)
+async def delete_user(user_id: int, current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
     db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
 
     if not db_user: 
-        raise HTTPException(status_code = 404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found")
     
     db.delete(db_user)
     db.commit()
