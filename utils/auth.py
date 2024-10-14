@@ -8,8 +8,12 @@ from models.user import User as UserModel
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 import os
+import logging
+
 
 load_dotenv()
+
+logging.getLogger('passlib').setLevel(logging.ERROR)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
