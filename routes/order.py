@@ -6,6 +6,7 @@ from models.order import Order as OrderModel, OrderItem as OrderItemModel
 from schemas.order import OrderCreate, OrderUpdate, OrderOut, OrderItemCreate, OrderItemOut
 from models.product import Product as ProductModel
 from models.user import User as UserModel
+from utils.auth import get_current_user
 
 
 order = APIRouter(prefix="/orders", tags=["orders"])
@@ -14,14 +15,10 @@ order = APIRouter(prefix="/orders", tags=["orders"])
 
 # Create a new order
 @order.post("/", response_model=OrderOut)
-async def create_order(order_data: OrderCreate, db: Session = Depends(get_db)):
-    db_user = db.query(UserModel).filter(UserModel.id == order_data.user_id).first()
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
+async def create_order(order_data: OrderCreate,current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
 
-    # Create the order
     db_order = OrderModel(
-        user_id=order_data.user_id,
+        user_id=current_user.id, 
         total_price=order_data.total_price,
         status=order_data.status,
         created_at=order_data.created_at
@@ -51,15 +48,15 @@ async def create_order(order_data: OrderCreate, db: Session = Depends(get_db)):
    
 # Get all orders
 @order.get("/", response_model=List[OrderOut])
-async def get_orders(db: Session = Depends(get_db)):
+async def get_orders(current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
     orders = db.query(OrderModel).all()
     return orders
 
 
 # Get order by id
 @order.get("/{order_id}", response_model=OrderOut)
-async def get_order(order_id: int, db: Session = Depends(get_db)):
-    db_order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+async def get_order(order_id: int, current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_order = db.query(OrderModel).filter(OrderModel.id == order_id, OrderModel.user_id == current_user.id).first()
 
     if not db_order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -69,12 +66,12 @@ async def get_order(order_id: int, db: Session = Depends(get_db)):
 
 # Update order
 @order.put("/{order_id}", response_model=OrderOut)
-async def update_order(order_id:int, order_update:OrderUpdate, db:Session = Depends(get_db)):
-    db_order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+async def update_order(order_id: int, order_update: OrderUpdate, current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_order = db.query(OrderModel).filter(OrderModel.id == order_id, OrderModel.user_id == current_user.id).first()  # Ensure the user owns the order
 
-    if not db_order: 
-        raise HTTPException(status_code = 404, detail="Order not found")
-    
+    if not db_order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
     if order_update.total_price is not None:
         db_order.total_price = order_update.total_price
 
@@ -89,8 +86,8 @@ async def update_order(order_id:int, order_update:OrderUpdate, db:Session = Depe
 
 # Delete order
 @order.delete("/{order_id}", response_model=dict)
-async def delete_order(order_id:int, db: Session = Depends(get_db)):
-    db_order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+async def delete_order(order_id:int, current_user:UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_order = db.query(OrderModel).filter(OrderModel.id == order_id, OrderModel.user_id == current_user.id).first()
 
     if not db_order: 
         raise HTTPException(status_code = 404, detail="Order not found")
