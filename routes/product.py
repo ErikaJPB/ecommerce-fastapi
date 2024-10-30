@@ -5,7 +5,7 @@ from config.db import get_db
 from models.product import Product as ProductModel
 from schemas.product import ProductCreate, ProductUpdate, ProductOut
 from models.user import User as UserModel
-from utils.auth import get_current_user
+from utils.auth import get_current_user, is_admin_user
 
 product = APIRouter(prefix="/products", tags = ["products"])
 
@@ -13,7 +13,7 @@ product = APIRouter(prefix="/products", tags = ["products"])
 
 # Create product
 @product.post("/products", response_model=ProductOut)
-async def create_product(product_data: ProductCreate, current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+async def create_product(product_data: ProductCreate, current_user: UserModel = Depends(is_admin_user), db: Session = Depends(get_db)):
 
     db_product = ProductModel(
         name=product_data.name,
@@ -48,7 +48,7 @@ async def get_product(product_id: int, db: Session = Depends(get_db)):
 
 # Update product
 @product.put("/products/{product_id}", response_model=ProductOut)
-async def update_product(product_id: int, product_update: ProductUpdate, current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+async def update_product(product_id: int, product_update: ProductUpdate, current_user: UserModel = Depends(is_admin_user), db: Session = Depends(get_db)):
 
      db_product = db.query(ProductModel).filter(ProductModel.id == product_id).first()
 
@@ -75,7 +75,7 @@ async def update_product(product_id: int, product_update: ProductUpdate, current
 
 # Delete product
 @product.delete("/products/{product_id}", response_model=dict)
-async def delete_product(product_id:int, current_user:UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+async def delete_product(product_id:int, current_user:UserModel = Depends(is_admin_user), db: Session = Depends(get_db)):
     db_product = db.query(ProductModel).filter(ProductModel.id == product_id).first()
 
     if not db_product: 
@@ -85,3 +85,5 @@ async def delete_product(product_id:int, current_user:UserModel = Depends(get_cu
     db.commit()
     
     return {"message": "Product deleted"}
+
+
