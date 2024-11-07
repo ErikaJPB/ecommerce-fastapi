@@ -20,7 +20,7 @@ async def create_cart(cart_data: CartCreate, current_user: UserModel = Depends(g
         raise HTTPException(status_code=403, detail="Not authorized to create cart for this user")
 
     db_cart = CartModel(
-        user_id=cart_data.user_id
+        user_id=current_user.id
     )
     db.add(db_cart)
     db.commit()
@@ -46,13 +46,17 @@ async def create_cart(cart_data: CartCreate, current_user: UserModel = Depends(g
 
 
 
-# Get cart
-@cart.get("/", response_model=CartOut)
-async def get_cart(current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_cart = db.query(CartModel).filter(CartModel.user_id == current_user.id).first()
+# Get cart (user and admin)
+@cart.get("/{cart_id}", response_model=CartOut)
+async def get_cart(cart_id: int, current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_cart = db.query(CartModel).filter(CartModel.id == cart_id).first()
 
     if not db_cart:
         raise HTTPException(status_code=404, detail="Cart not found")
+    
+
+    if db_cart.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to view this cart")
     
     return db_cart
 
@@ -65,6 +69,10 @@ async def add_item_to_cart(cart_id: int, item_data: CartItemCreate, current_user
     if not db_cart:
         raise HTTPException(status_code=404, detail="Cart not found")
 
+
+    if db_cart.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to add items to this cart")
+    
     product = db.query(ProductModel).filter(ProductModel.id == item_data.product_id).first()
 
     if not product:
@@ -84,18 +92,21 @@ async def add_item_to_cart(cart_id: int, item_data: CartItemCreate, current_user
     return cart_item
 
 
-# Update cart item
+# Update cart item (user and admin)
 @cart.put("/{cart_id}/items/{item_id}", response_model=CartOut)
 async def update_cart_item(cart_id: int, item_id: int, item_data: CartItemUpdate, current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
     
     cart_item = db.query(CartItemModel).filter(CartItemModel.id == item_id, CartItemModel.cart_id == cart_id).first()
 
-    if not cart_item or cart_item.cart.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Cart item not found or you do not have permission to update this item")
-    
+    if not cart_item:
+        raise HTTPException(status_code=404, detail="Cart item not found")
+
+    if cart_item.cart.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to update this cart item")
     
     if item_data.quantity is not None:
         cart_item.quantity = item_data.quantity
+
 
     db.commit()
     db.refresh(cart_item)
@@ -112,8 +123,11 @@ async def remove_cart_item(cart_id: int, item_id: int, current_user: UserModel =
 
     cart_item = db.query(CartItemModel).filter(CartItemModel.id == item_id, CartItemModel.cart_id == cart_id).first()
 
-    if not cart_item or cart_item.cart.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Cart item not found or you do not have permission to delete this item")
+    if not cart_item:
+        raise HTTPException(status_code=404, detail="Cart item not found")
+
+    if cart_item.cart.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this cart item")
 
     db.delete(cart_item)
     db.commit()
@@ -127,7 +141,10 @@ async def delete_cart(cart_id: int,current_user: UserModel = Depends(get_current
     db_cart = db.query(CartModel).filter(CartModel.id == cart_id).first()
 
     if not db_cart:
-        raise HTTPException(status_code=404, detail="Cart not found or you do not have permission to delete this cart")
+        raise HTTPException(status_code=404, detail="Cart not found")
+    
+    if db_cart.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this cart")
 
     db.query(CartItemModel).filter(CartItemModel.cart_id == cart_id).delete()
     db.delete(db_cart)
