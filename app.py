@@ -4,7 +4,7 @@ from routes.product import product
 from routes.order import order
 from routes.cart import cart
 from routes.token import router as token
-from config.db import Base, engine
+from config.db import Base, engine, create_database
 from models.user import User
 from models.order import Order, OrderItem
 from models.product import Product
@@ -26,4 +26,5 @@ def create_tables():
 # Run on startup
 @app.on_event("startup")
 async def on_startup():
+    create_database()
     create_tables()
